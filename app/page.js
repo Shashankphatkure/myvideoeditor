@@ -1,113 +1,210 @@
-import Image from "next/image";
+"use client";
+import React, { useState, useCallback, useEffect } from "react";
+import dynamic from "next/dynamic";
+
+const ExportPreview = dynamic(() => import("../components/ExportPreview"), {
+  ssr: false,
+});
+
+const CustomVideoPlayer = dynamic(
+  () => import("../components/CustomVideoPlayer"),
+  { ssr: false }
+);
+const Timeline = dynamic(() => import("../components/Timeline"), {
+  ssr: false,
+});
+const MediaLibrary = dynamic(() => import("../components/MediaLibrary"), {
+  ssr: false,
+});
+const ProjectManager = dynamic(() => import("../components/ProjectManager"), {
+  ssr: false,
+});
 
 export default function Home() {
+  const [mediaItems] = useState([
+    {
+      id: 1,
+      name: "Beach Sunset",
+      url: "/videos/video1.mp4",
+      duration: 120,
+      size: 15728640, // 15 MB
+      thumbnail: "/thumbnail/image1.png",
+    },
+    {
+      id: 2,
+      name: "City Timelapse",
+      url: "/videos/video1.mp4",
+      duration: 180,
+      size: 31457280, // 30 MB
+      thumbnail: "/thumbnail/image1.png",
+    },
+    {
+      id: 3,
+      name: "Nature Sounds",
+      url: "https://www.example.com/audio1.mp3",
+      duration: 60,
+      size: 5242880, // 5 MB
+      thumbnail: "/thumbnail/image1.png",
+    },
+  ]);
+
+  const [timelineItems, setTimelineItems] = useState([]);
+  const [currentVideo, setCurrentVideo] = useState(null);
+  const [currentProject, setCurrentProject] = useState(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(0);
+
+  useEffect(() => {
+    const lastProject = localStorage.getItem("lastProject");
+    if (lastProject) {
+      const parsedProject = JSON.parse(lastProject);
+      setCurrentProject(parsedProject);
+      setTimelineItems(parsedProject.timelineItems || []);
+      setCurrentVideo(parsedProject.currentVideo || null);
+    }
+  }, []);
+
+  const handleMediaItemClick = (item) => {
+    setTimelineItems([
+      ...timelineItems,
+      {
+        ...item,
+        id: Date.now(),
+        trimStart: 0,
+        trimEnd: item.duration,
+        effect: "none",
+        volume: 1,
+        fadeIn: 0,
+        fadeOut: 0,
+      },
+    ]);
+    setCurrentVideo(item.url);
+  };
+
+  const handleRemoveTimelineItem = (id) => {
+    setTimelineItems(timelineItems.filter((item) => item.id !== id));
+  };
+
+  const handleReorder = (newItems) => {
+    setTimelineItems(newItems);
+  };
+
+  const handleTrimChange = (id, type, value) => {
+    setTimelineItems(
+      timelineItems.map((item) => {
+        if (item.id === id) {
+          return { ...item, [type]: value };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleEffectChange = (id, effect) => {
+    setTimelineItems(
+      timelineItems.map((item) => {
+        if (item.id === id) {
+          return { ...item, effect };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleAudioChange = (id, property, value) => {
+    setTimelineItems(
+      timelineItems.map((item) => {
+        if (item.id === id) {
+          return { ...item, [property]: value };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleSaveProject = (project) => {
+    const projectData = {
+      ...project,
+      timelineItems,
+      currentVideo,
+    };
+    setCurrentProject(projectData);
+    localStorage.setItem("lastProject", JSON.stringify(projectData));
+  };
+
+  const handleLoadProject = (project) => {
+    setCurrentProject(project);
+    setTimelineItems(project.data.timelineItems || []);
+    setCurrentVideo(project.data.currentVideo || null);
+    localStorage.setItem("lastProject", JSON.stringify(project.data));
+  };
+
+  const handleNewProject = () => {
+    setCurrentProject(null);
+    setTimelineItems([]);
+    setCurrentVideo(null);
+    localStorage.removeItem("lastProject");
+  };
+
+  const handleProgress = (state) => {
+    setCurrentTime(state.playedSeconds);
+  };
+
+  const handleDuration = (duration) => {
+    setTotalDuration(duration);
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+    <div className="flex flex-col h-screen bg-gray-900 text-white">
+      <header className="bg-gray-800 p-4">
+        <h1 className="text-2xl font-bold">My Video Editor</h1>
+      </header>
+
+      <main className="flex-grow flex overflow-hidden">
+        <aside className="w-72 bg-gray-800 p-4 overflow-y-auto">
+          <MediaLibrary items={mediaItems} onItemClick={handleMediaItemClick} />
+          <div className="mt-4">
+            <ProjectManager
+              currentProject={currentProject}
+              onSave={handleSaveProject}
+              onLoad={handleLoadProject}
+              onNew={handleNewProject}
             />
-          </a>
-        </div>
-      </div>
+          </div>
+        </aside>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+        <section className="flex-grow p-4 flex flex-col overflow-hidden">
+          <div className="aspect-video bg-black mb-4">
+            <CustomVideoPlayer
+              currentVideo={
+                currentVideo || "https://www.example.com/default-video.mp4"
+              }
+              timelineItems={timelineItems}
+              currentTime={currentTime}
+              onProgress={handleProgress}
+              onDuration={handleDuration}
+            />
+          </div>
+          <div className="flex-grow bg-gray-800 p-2 overflow-hidden">
+            <Timeline
+              items={timelineItems}
+              onRemoveItem={handleRemoveTimelineItem}
+              onReorder={handleReorder}
+              onTrimChange={handleTrimChange}
+              onEffectChange={handleEffectChange}
+              onAudioChange={handleAudioChange}
+              currentTime={currentTime}
+              totalDuration={totalDuration}
+            />
+          </div>
+          <ExportPreview timelineItems={timelineItems} />
+        </section>
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800 hover:dark:bg-opacity-30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+        <aside className="w-64 bg-gray-800 p-4">
+          <h2 className="text-xl mb-4">Properties</h2>
+          {/* Property controls can be added here */}
+        </aside>
+      </main>
+    </div>
   );
 }
