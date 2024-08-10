@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { FiSave, FiFolder, FiPlus } from "react-icons/fi";
 
 const ProjectManager = ({ currentProject, onSave, onLoad, onNew }) => {
   const [projectName, setProjectName] = useState(currentProject?.name || "");
@@ -38,35 +39,32 @@ const ProjectManager = ({ currentProject, onSave, onLoad, onNew }) => {
   };
 
   return (
-    <div className="bg-gray-800 p-4 rounded-lg">
-      <h2 className="text-xl mb-4">Project Management</h2>
+    <div className="bg-gray-800 p-4 rounded-lg shadow-md">
+      <h2 className="text-xl mb-4 font-semibold">Project Management</h2>
       <div className="flex mb-4">
         <input
           type="text"
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
           placeholder="Project Name"
-          className="flex-grow mr-2 p-2 bg-gray-700 rounded"
+          className="flex-grow mr-2 p-2 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600"
         />
-        <button onClick={handleSave} className="bg-blue-500 px-4 py-2 rounded">
-          Save
+        <button onClick={handleSave} className="btn-primary">
+          <FiSave className="mr-2" /> Save
         </button>
       </div>
-      <button
-        onClick={handleNew}
-        className="bg-green-500 px-4 py-2 rounded mb-4 w-full"
-      >
-        New Project
+      <button onClick={handleNew} className="btn-secondary mb-4 w-full">
+        <FiPlus className="mr-2" /> New Project
       </button>
-      <h3 className="text-lg mb-2">Saved Projects:</h3>
+      <h3 className="text-lg mb-2 font-semibold">Saved Projects:</h3>
       <ul className="max-h-48 overflow-y-auto">
         {savedProjects.map((project, index) => (
           <li key={index} className="mb-2">
             <button
               onClick={() => handleLoad(project)}
-              className="bg-gray-700 px-4 py-2 rounded w-full text-left hover:bg-gray-600"
+              className="bg-gray-700 px-4 py-2 rounded-md w-full text-left hover:bg-gray-600 transition-colors duration-200 flex items-center"
             >
-              {project.name}
+              <FiFolder className="mr-2" /> {project.name}
             </button>
           </li>
         ))}

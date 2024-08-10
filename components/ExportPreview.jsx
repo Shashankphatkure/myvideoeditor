@@ -1,47 +1,54 @@
-import React, { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
+import React, { useState } from "react";
 
-const ReactPlayer = dynamic(() => import("react-player"), { ssr: false });
+import { FiUpload, FiSettings } from "react-icons/fi";
 
 const ExportPreview = ({ timelineItems }) => {
-  const [previewUrl, setPreviewUrl] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [exportSettings, setExportSettings] = useState({
+    format: "mp4",
+    quality: "high",
+  });
 
-  const generatePreview = async () => {
-    setIsGenerating(true);
-    // Simulate export process
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // In a real scenario, you'd send the timelineItems to a backend service
-    // and get back a URL for the processed video. For now, we'll just use the first video.
-    const firstVideoItem = timelineItems.find((item) =>
-      item.url.includes("video")
-    );
-    setPreviewUrl(firstVideoItem ? firstVideoItem.url : "");
-
-    setIsGenerating(false);
+  const handleExport = () => {
+    // Implement export logic here
+    console.log("Exporting with settings:", exportSettings);
+    console.log("Timeline items:", timelineItems);
   };
-
-  useEffect(() => {
-    // Reset preview when timelineItems change
-    setPreviewUrl("");
-  }, [timelineItems]);
-
   return (
-    <div className="mt-4">
-      <button
-        onClick={generatePreview}
-        disabled={isGenerating || timelineItems.length === 0}
-        className="bg-green-500 text-white px-4 py-2 rounded disabled:bg-gray-400"
-      >
-        {isGenerating ? "Generating Preview..." : "Generate Export Preview"}
+    <div className="bg-gray-800 p-4 rounded-lg shadow-md">
+      <h2 className="text-xl mb-4 font-semibold flex items-center">
+        <FiSettings className="mr-2" /> Export Settings
+      </h2>
+      <div className="mb-4">
+        <label className="block mb-2">Format:</label>
+        <select
+          value={exportSettings.format}
+          onChange={(e) =>
+            setExportSettings({ ...exportSettings, format: e.target.value })
+          }
+          className="w-full p-2 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600"
+        >
+          <option value="mp4">MP4</option>
+          <option value="webm">WebM</option>
+          <option value="mov">MOV</option>
+        </select>
+      </div>
+      <div className="mb-4">
+        <label className="block mb-2">Quality:</label>
+        <select
+          value={exportSettings.quality}
+          onChange={(e) =>
+            setExportSettings({ ...exportSettings, quality: e.target.value })
+          }
+          className="w-full p-2 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600"
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+      <button onClick={handleExport} className="btn-primary w-full">
+        <FiUpload className="mr-2" /> Export Video
       </button>
-      {previewUrl && (
-        <div className="mt-4">
-          <h3 className="text-xl mb-2">Export Preview</h3>
-          <ReactPlayer url={previewUrl} width="100%" height="auto" controls />
-        </div>
-      )}
     </div>
   );
 };
